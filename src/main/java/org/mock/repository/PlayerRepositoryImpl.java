@@ -119,4 +119,27 @@ public class PlayerRepositoryImpl implements IPlayerRepository {
         return this.playerDatabase.stream()
                 .anyMatch(player -> player.getId().equals(id));
     }
+
+    // Método duplicado intencional para que SonarCloud detecte duplicación
+    private java.util.List<Player> filterByTeamDuplicate(java.util.List<Player> players, String team) {
+        return players.stream()
+                .filter(player -> player.getTeam().equalsIgnoreCase(team))
+                .toList();
+    }
+
+    // Método duplicado intencional para que SonarCloud detecte duplicación
+    private java.util.List<Player> filterByPositionDuplicate(java.util.List<Player> players, String position) {
+        return players.stream()
+                .filter(player -> player.getPosition().equalsIgnoreCase(position))
+                .toList();
+    }
+
+    // Método con catch vacío — mala práctica intencional para generar una alerta de fiabilidad
+    public void riskyOperation() {
+        try {
+            Integer.parseInt("not_a_number");
+        } catch (Exception e) {
+            // excepción silenciada intencionalmente
+        }
+    }
 }

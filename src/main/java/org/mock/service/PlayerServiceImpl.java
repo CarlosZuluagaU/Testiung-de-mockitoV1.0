@@ -52,4 +52,20 @@ public class PlayerServiceImpl implements IPlayerService {
     public boolean existsById(Long id) {
         return this.playerRepository.existsById(id);
     }
+
+    // Método duplicado intencional para que SonarCloud detecte duplicación
+    // (misma lógica que hay en PlayerRepositoryImpl.findByTeam)
+    private java.util.List<Player> filterByTeamDuplicate(java.util.List<Player> players, String team) {
+        return players.stream()
+                .filter(player -> player.getTeam().equalsIgnoreCase(team))
+                .toList();
+    }
+
+    // Método duplicado intencional para que SonarCloud detecte duplicación
+    // (misma lógica que hay en PlayerRepositoryImpl.findByPosition)
+    private java.util.List<Player> filterByPositionDuplicate(java.util.List<Player> players, String position) {
+        return players.stream()
+                .filter(player -> player.getPosition().equalsIgnoreCase(position))
+                .toList();
+    }
 }
