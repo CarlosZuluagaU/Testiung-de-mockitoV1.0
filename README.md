@@ -188,6 +188,38 @@ mvn sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=TU_TOKEN
 
 ---
 
+## 7. Partes de código para analizar y corregir
+
+Si tu objetivo es revisar el proyecto y corregir errores detectados por SonarCloud, estas son las zonas más importantes:
+
+| Archivo | Parte concreta | Qué conviene revisar |
+|---|---|---|
+| `src/main/java/org/mock/Main.java` | `main(...)` | Tiene demasiadas responsabilidades en un solo método. Conviene separarlo en métodos más pequeños para bajar complejidad cognitiva y facilitar mantenimiento. |
+| `src/main/java/org/mock/Main.java` | `generateToken()` | Usa `Random` y `MD5`, lo que es inseguro. Para corregirlo, conviene usar `SecureRandom` y un algoritmo más robusto. |
+| `src/main/java/org/mock/Main.java` | `SECRET`, `ADMIN_PASSWORD`, `JWT_SECRET` | Son secretos hardcodeados. Lo recomendable es moverlos a variables de entorno o a un sistema de configuración seguro. |
+| `src/main/java/org/mock/Main.java` | `printSecurityBlock()` y `printSecurityBlockCopy()` | Son duplicaciones casi idénticas. Se pueden unificar en un solo método reutilizable. |
+| `src/main/java/org/mock/repository/PlayerRepositoryImpl.java` | `findByTeam(...)` y `findByPosition(...)` | Repiten lógica de filtrado muy parecida. Se puede extraer un método genérico para reducir duplicación. |
+| `src/main/java/org/mock/repository/PlayerRepositoryImpl.java` | `deleteById(...)` | Tiene una validación previa y una recolección adicional. Conviene revisar si puede simplificarse. |
+| `src/main/java/org/mock/repository/PlayerRepositoryImpl.java` | `riskyOperation()` | Contiene un `catch` vacío. Debería registrar el error o lanzarlo de nuevo para no ocultar fallos. |
+| `src/main/java/org/mock/service/PlayerServiceImpl.java` | Métodos duplicados auxiliares | Hay lógica repetida que se puede eliminar para bajar la duplicación total del proyecto. |
+
+### Orden recomendado de corrección
+
+1. Seguridad: eliminar secretos hardcodeados y sustituir el generador inseguro.
+2. Fiabilidad: arreglar el `catch` vacío y validar mejor entradas nulas.
+3. Duplicación: unificar métodos repetidos en `Main` y `PlayerRepositoryImpl`.
+4. Complejidad: dividir `main(...)` en métodos pequeños y con una sola responsabilidad.
+
+### Criterio práctico para saber si corregiste bien
+
+- El método queda más corto y fácil de leer.
+- Se reduce la repetición de código.
+- No quedan secretos visibles en el código fuente.
+- Los errores no se silencian con `catch` vacíos.
+- SonarCloud deja de marcar problemas en esas líneas o los reduce notablemente.
+
+---
+
 ## 5. Dependencias requeridas
 
 ```xml
