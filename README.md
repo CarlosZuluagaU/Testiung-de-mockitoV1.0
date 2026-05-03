@@ -163,6 +163,31 @@ Clase utilitaria de pruebas con datos estáticos.
 
 ---
 
+## 6. Issues intencionales para SonarCloud
+
+Este proyecto incluye algunos problemas dejados a propósito para un trabajo de análisis estático:
+
+| Tipo | Ejemplo |
+|---|---|
+| Duplicación | Métodos duplicados de filtrado en `PlayerServiceImpl` y `PlayerRepositoryImpl` |
+| Fiabilidad | `catch` vacío en `PlayerRepositoryImpl.riskyOperation()` |
+| Seguridad | Clave hardcodeada y uso de `Random` + `MD5` en `Main` |
+
+### Ejecutar el proyecto
+
+```powershell
+mvn clean package -DskipTests
+java -cp "target/classes;target/MockTestingProject-1.0-SNAPSHOT.jar" org.mock.Main
+```
+
+### Ejecutar SonarCloud
+
+```powershell
+mvn sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=TU_TOKEN
+```
+
+---
+
 ## 5. Dependencias requeridas
 
 ```xml
