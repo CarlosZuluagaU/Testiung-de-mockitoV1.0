@@ -38,5 +38,11 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        working-directory: ${{ github.workspace }}
-        run: mvn -B -f "${{ github.workspace }}/pom.xml" verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=CarlosZuluagaU_Testiung-de-mockitoV1.0
+        run: |
+          POM_FILE=$(find "$GITHUB_WORKSPACE" -name pom.xml | head -n 1)
+          if [ -z "$POM_FILE" ]; then
+            echo "No pom.xml found in $GITHUB_WORKSPACE"
+            exit 1
+          fi
+
+          mvn -B -f "$POM_FILE" verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=CarlosZuluagaU_fabrica_2026S1 -Dsonar.organization=carloszuluagau
