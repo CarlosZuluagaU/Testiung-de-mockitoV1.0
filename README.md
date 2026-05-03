@@ -171,7 +171,7 @@ Este proyecto incluye algunos problemas dejados a propósito para un trabajo de 
 |---|---|
 | Duplicación | Métodos duplicados de filtrado en `PlayerServiceImpl` y `PlayerRepositoryImpl` |
 | Fiabilidad | `catch` vacío en `PlayerRepositoryImpl.riskyOperation()` |
-| Seguridad | Clave hardcodeada y uso de `Random` + `MD5` en `Main` |
+| Seguridad | Claves hardcodeadas, password de admin expuesta y uso de `Random` + `MD5` en `Main` |
 
 ### Ejecutar el proyecto
 

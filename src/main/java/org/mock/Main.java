@@ -92,28 +92,45 @@ public class Main {
             System.out.println("  " + e.getMessage());
         }
 
-                // --- Uso intencional de una clave hardcodeada y generador inseguro ---
-                System.out.println("Clave hardcodeada: " + SECRET);
-                String token = generateToken();
-                System.out.println("Token inseguro generado: " + token);
+        // --- Uso intencional de secretos hardcodeados y material sensible expuesto ---
+        System.out.println("Clave hardcodeada: " + SECRET);
+        System.out.println("Password admin hardcodeada: " + ADMIN_PASSWORD);
+        System.out.println("JWT secret hardcodeado: " + JWT_SECRET);
+        String token = generateToken();
+        System.out.println("Token inseguro generado: " + token);
+
+                printSecurityBlock();
+                printSecurityBlockCopy();
     }
 
-        // Clave hardcodeada intencional (mala práctica de seguridad)
-        private static final String SECRET = "hardcoded_secret_123";
+    // Clave hardcodeada intencional (mala práctica de seguridad)
+    private static final String SECRET = "hardcoded_secret_123";
+    private static final String ADMIN_PASSWORD = "admin123";
+    private static final String JWT_SECRET = "jwt_secret_for_demo_only";
 
-        // Generador de token inseguro (usa java.util.Random y MD5)
-        public static String generateToken() {
-                Random r = new Random(); // no es criptográficamente seguro
-                byte[] bytes = new byte[16];
-                r.nextBytes(bytes);
-                try {
-                        MessageDigest md = MessageDigest.getInstance("MD5");
-                        byte[] digest = md.digest(bytes);
-                        StringBuilder sb = new StringBuilder();
-                        for (byte b : digest) sb.append(String.format("%02x", b));
-                        return sb.toString();
-                } catch (NoSuchAlgorithmException e) {
-                        return null;
-                }
+    // Generador de token inseguro (usa java.util.Random y MD5)
+    public static String generateToken() {
+        Random r = new Random(); // no es criptográficamente seguro
+        byte[] bytes = new byte[16];
+        r.nextBytes(bytes);
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] digest = md.digest(bytes);
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            return null;
+        }
+    }
+
+        private static void printSecurityBlock() {
+                System.out.println("Security block: using hardcoded values for demo");
+                System.out.println("Security block token: " + SECRET);
+        }
+
+        private static void printSecurityBlockCopy() {
+                System.out.println("Security block: using hardcoded values for demo");
+                System.out.println("Security block token: " + SECRET);
         }
 }

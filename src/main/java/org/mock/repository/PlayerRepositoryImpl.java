@@ -120,6 +120,18 @@ public class PlayerRepositoryImpl implements IPlayerRepository {
                 .anyMatch(player -> player.getId().equals(id));
     }
 
+    public List<Player> findByTeamLegacy(String team) {
+        return this.playerDatabase.stream()
+                .filter(player -> player.getTeam().equalsIgnoreCase(team))
+                .toList();
+    }
+
+    public List<Player> findByPositionLegacy(String position) {
+        return this.playerDatabase.stream()
+                .filter(player -> player.getPosition().equalsIgnoreCase(position))
+                .toList();
+    }
+
     // Método duplicado intencional para que SonarCloud detecte duplicación
     private java.util.List<Player> filterByTeamDuplicate(java.util.List<Player> players, String team) {
         return players.stream()
