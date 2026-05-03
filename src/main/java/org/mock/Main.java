@@ -7,6 +7,9 @@ import org.mock.service.PlayerServiceImpl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.stream.Collectors;
 
 public class Main {
@@ -88,5 +91,29 @@ public class Main {
         } catch (PlayerNotFoundException e) {
             System.out.println("  " + e.getMessage());
         }
+
+                // --- Uso intencional de una clave hardcodeada y generador inseguro ---
+                System.out.println("Clave hardcodeada: " + SECRET);
+                String token = generateToken();
+                System.out.println("Token inseguro generado: " + token);
     }
+
+        // Clave hardcodeada intencional (mala práctica de seguridad)
+        private static final String SECRET = "hardcoded_secret_123";
+
+        // Generador de token inseguro (usa java.util.Random y MD5)
+        public static String generateToken() {
+                Random r = new Random(); // no es criptográficamente seguro
+                byte[] bytes = new byte[16];
+                r.nextBytes(bytes);
+                try {
+                        MessageDigest md = MessageDigest.getInstance("MD5");
+                        byte[] digest = md.digest(bytes);
+                        StringBuilder sb = new StringBuilder();
+                        for (byte b : digest) sb.append(String.format("%02x", b));
+                        return sb.toString();
+                } catch (NoSuchAlgorithmException e) {
+                        return null;
+                }
+        }
 }
