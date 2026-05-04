@@ -186,6 +186,27 @@ java -cp "target/classes;target/MockTestingProject-1.0-SNAPSHOT.jar" org.mock.Ma
 mvn sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=TU_TOKEN
 ```
 
+### Configurar el token de SonarCloud
+
+Para que el análisis funcione en GitHub Actions, el repositorio debe tener un secreto llamado `SONAR_TOKEN` en **Settings > Secrets and variables > Actions**.
+
+Pasos:
+1. Ir al repositorio en GitHub.
+2. Abrir `Settings`.
+3. Entrar a `Secrets and variables`.
+4. Ir a `Actions`.
+5. Crear un nuevo secreto llamado `SONAR_TOKEN`.
+6. Pegar ahí el token de SonarCloud.
+
+En local, si quieres ejecutar Sonar manualmente, define la variable de entorno antes de correr Maven:
+
+```powershell
+$env:SONAR_TOKEN="tu_token_aqui"
+mvn sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.token=$env:SONAR_TOKEN
+```
+
+No es recomendable guardar el token dentro del código ni en el repositorio.
+
 ---
 
 ## 7. Partes de código para analizar y corregir
