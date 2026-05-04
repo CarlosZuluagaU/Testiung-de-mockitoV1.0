@@ -1,136 +1,155 @@
 package org.mock;
 
-import org.mock.exception.PlayerNotFoundException;
 import org.mock.persistence.entity.Player;
 import org.mock.repository.PlayerRepositoryImpl;
 import org.mock.service.PlayerServiceImpl;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Main {
-    public static void main(String[] args) {
-        PlayerRepositoryImpl playerRepository = new PlayerRepositoryImpl();
-        PlayerServiceImpl playerService = new PlayerServiceImpl(playerRepository);
+        private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+        private static final int TOKEN_SIZE_BYTES = 32;
+        private static final List<String> POSITION_ORDER = List.of(
+                        "Portero",
+                        "Defensa",
+                        "Centrocampista",
+                        "Delantero"
+        );
+        private static final List<String> TEAM_ORDER = List.of(
+                        "Real Madrid",
+                        "FC Barcelona",
+                        "Liverpool"
+        );
 
-        List<Player> todos = playerService.findAll();
+        public static void main(String[] args) {
+                PlayerServiceImpl playerService = new PlayerServiceImpl(new PlayerRepositoryImpl());
+                List<Player> players = playerService.findAll();
 
-        // ── Estadísticas generales ───────────────────────────────────────────
-        System.out.println("╔══════════════════════════════════════════════╗");
-        System.out.println("║       BASE DE DATOS DE JUGADORES             ║");
-        System.out.println("╚══════════════════════════════════════════════╝");
-        System.out.println("Total de jugadores: " + todos.size());
-
-        Map<String, Long> porPosicion = todos.stream()
-                .collect(Collectors.groupingBy(Player::getPosition, Collectors.counting()));
-        System.out.println("\nJugadores por posición:");
-        porPosicion.entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .forEach(e -> System.out.printf("  %-20s %d%n", e.getKey() + ":", e.getValue()));
-
-        Map<String, Long> porEquipo = todos.stream()
-                .collect(Collectors.groupingBy(Player::getTeam, Collectors.counting()));
-        System.out.println("\nEquipos con más jugadores:");
-        porEquipo.entrySet().stream()
-                .filter(e -> e.getValue() > 1)
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .forEach(e -> System.out.printf("  %-25s %d jugadores%n", e.getKey() + ":", e.getValue()));
-
-        // ── Búsquedas por posición ───────────────────────────────────────────
-        System.out.println("\n─── PORTEROS ───────────────────────────────────");
-        playerService.findByPosition("Portero").forEach(p ->
-                System.out.printf("  [%2d] %-25s %s%n", p.getId(), p.getName(), p.getTeam()));
-
-        System.out.println("\n─── DEFENSAS ───────────────────────────────────");
-        playerService.findByPosition("Defensa").forEach(p ->
-                System.out.printf("  [%2d] %-25s %s%n", p.getId(), p.getName(), p.getTeam()));
-
-        System.out.println("\n─── CENTROCAMPISTAS ────────────────────────────");
-        playerService.findByPosition("Centrocampista").forEach(p ->
-                System.out.printf("  [%2d] %-25s %s%n", p.getId(), p.getName(), p.getTeam()));
-
-        System.out.println("\n─── DELANTEROS ─────────────────────────────────");
-        playerService.findByPosition("Delantero").forEach(p ->
-                System.out.printf("  [%2d] %-25s %s%n", p.getId(), p.getName(), p.getTeam()));
-
-        // ── Búsqueda por equipo ──────────────────────────────────────────────
-        System.out.println("\n─── REAL MADRID ────────────────────────────────");
-        playerService.findByTeam("Real Madrid").forEach(p ->
-                System.out.printf("  %-25s (%s)%n", p.getName(), p.getPosition()));
-
-        System.out.println("\n─── FC BARCELONA ───────────────────────────────");
-        playerService.findByTeam("FC Barcelona").forEach(p ->
-                System.out.printf("  %-25s (%s)%n", p.getName(), p.getPosition()));
-
-        System.out.println("\n─── LIVERPOOL ──────────────────────────────────");
-        playerService.findByTeam("Liverpool").forEach(p ->
-                System.out.printf("  %-25s (%s)%n", p.getName(), p.getPosition()));
-
-        // ── CRUD ─────────────────────────────────────────────────────────────
-        System.out.println("\n─── SAVE ───────────────────────────────────────");
-        Player nuevo = new Player(50L, "Lamine Yamal", "FC Barcelona", "Delantero");
-        playerService.save(nuevo);
-        System.out.println("  Guardado: " + nuevo.getName() + " | Total: " + playerService.findAll().size());
-
-        System.out.println("\n─── UPDATE ─────────────────────────────────────");
-        playerService.update(new Player(50L, "Lamine Yamal", "FC Barcelona", "Extremo"));
-        System.out.println("  Actualizado: " + playerService.findById(50L));
-
-        System.out.println("\n─── DELETE ─────────────────────────────────────");
-        playerService.deleteById(50L);
-        System.out.println("  Eliminado id=50. Total: " + playerService.findAll().size());
-
-        // ── Excepción ────────────────────────────────────────────────────────
-        System.out.println("\n─── EXCEPCION (id=999) ─────────────────────────");
-        try {
-            playerService.findById(999L);
-        } catch (PlayerNotFoundException e) {
-            System.out.println("  " + e.getMessage());
+                printHeader();
+                printStatistics(players);
+                printPlayersByPosition(playerService);
+                printPlayersByTeam(playerService);
+                runCrudDemo(playerService);
+                runMissingPlayerDemo(playerService);
+                printSecureTokenDemo();
         }
 
-        // --- Uso intencional de secretos hardcodeados y material sensible expuesto ---
-        System.out.println("Clave hardcodeada: " + SECRET);
-        System.out.println("Password admin hardcodeada: " + ADMIN_PASSWORD);
-        System.out.println("JWT secret hardcodeado: " + JWT_SECRET);
-        String token = generateToken();
-        System.out.println("Token inseguro generado: " + token);
-
-                printSecurityBlock();
-                printSecurityBlockCopy();
-    }
-
-    // Clave hardcodeada intencional (mala práctica de seguridad)
-    private static final String SECRET = "hardcoded_secret_123";
-    private static final String ADMIN_PASSWORD = "admin123";
-    private static final String JWT_SECRET = "jwt_secret_for_demo_only";
-
-    // Generador de token inseguro (usa java.util.Random y MD5)
-    public static String generateToken() {
-        Random r = new Random(); // no es criptográficamente seguro
-        byte[] bytes = new byte[16];
-        r.nextBytes(bytes);
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] digest = md.digest(bytes);
-            StringBuilder sb = new StringBuilder();
-            for (byte b : digest) sb.append(String.format("%02x", b));
-            return sb.toString();
-        } catch (NoSuchAlgorithmException e) {
-            return null;
-        }
-    }
-
-        private static void printSecurityBlock() {
-                System.out.println("Security block: using hardcoded values for demo");
-                System.out.println("Security block token: " + SECRET);
+        private static void printHeader() {
+                System.out.println("╔══════════════════════════════════════════════╗");
+                System.out.println("║       BASE DE DATOS DE JUGADORES             ║");
+                System.out.println("╚══════════════════════════════════════════════╝");
         }
 
-        private static void printSecurityBlockCopy() {
-                System.out.println("Security block: using hardcoded values for demo");
-                System.out.println("Security block token: " + SECRET);
+        private static void printStatistics(List<Player> players) {
+                System.out.println("Total de jugadores: " + players.size());
+
+                printGroupedCounts(
+                                "\nJugadores por posición:",
+                                groupBy(players, Player::getPosition),
+                                false,
+                                "  %-20s %d%n"
+                );
+
+                printGroupedCounts(
+                                "\nEquipos con más jugadores:",
+                                groupBy(players, Player::getTeam),
+                                true,
+                                "  %-25s %d jugadores%n"
+                );
+        }
+
+        private static Map<String, Long> groupBy(List<Player> players, Function<Player, String> classifier) {
+                return players.stream().collect(Collectors.groupingBy(classifier, Collectors.counting()));
+        }
+
+        private static void printGroupedCounts(
+                        String title,
+                        Map<String, Long> counts,
+                        boolean onlyMoreThanOne,
+                        String format
+        ) {
+                System.out.println(title);
+                counts.entrySet().stream()
+                                .filter(entry -> !onlyMoreThanOne || entry.getValue() > 1)
+                                .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder())
+                                                .thenComparing(Map.Entry.comparingByKey()))
+                                .forEach(entry -> System.out.printf(format, entry.getKey() + ":", entry.getValue()));
+        }
+
+        private static void printPlayersByPosition(PlayerServiceImpl playerService) {
+                POSITION_ORDER.forEach(position -> printPositionSection(playerService, position));
+        }
+
+        private static void printPositionSection(PlayerServiceImpl playerService, String position) {
+                System.out.println("\n─── " + position.toUpperCase() + " ─────────────────────────────────");
+                playerService.findByPosition(position).forEach(player ->
+                                System.out.printf("  [%2d] %-25s %s%n", player.getId(), player.getName(), player.getTeam()));
+        }
+
+        private static void printPlayersByTeam(PlayerServiceImpl playerService) {
+                TEAM_ORDER.forEach(team -> printTeamSection(playerService, team));
+        }
+
+        private static void printTeamSection(PlayerServiceImpl playerService, String team) {
+                System.out.println("\n─── " + team.toUpperCase() + " ───────────────────────────────");
+                playerService.findByTeam(team).forEach(player ->
+                                System.out.printf("  %-25s (%s)%n", player.getName(), player.getPosition()));
+        }
+
+        private static void runCrudDemo(PlayerServiceImpl playerService) {
+                System.out.println("\n─── SAVE ───────────────────────────────────────");
+                Player player = new Player(50L, "Lamine Yamal", "FC Barcelona", "Delantero");
+                playerService.save(player);
+                System.out.println("  Guardado: " + player.getName() + " | Total: " + playerService.findAll().size());
+
+                System.out.println("\n─── UPDATE ─────────────────────────────────────");
+                playerService.update(new Player(50L, "Lamine Yamal", "FC Barcelona", "Extremo"));
+                System.out.println("  Actualizado: " + playerService.findById(50L));
+
+                System.out.println("\n─── DELETE ─────────────────────────────────────");
+                playerService.deleteById(50L);
+                System.out.println("  Eliminado id=50. Total: " + playerService.findAll().size());
+        }
+
+        private static void runMissingPlayerDemo(PlayerServiceImpl playerService) {
+                System.out.println("\n─── EXCEPCION (id=999) ─────────────────────────");
+                try {
+                        playerService.findById(999L);
+                } catch (org.mock.exception.PlayerNotFoundException exception) {
+                        System.out.println("  " + exception.getMessage());
+                }
+        }
+
+        private static void printSecureTokenDemo() {
+                String token = generateToken();
+                System.out.println("\nToken seguro generado: " + token);
+        }
+
+        public static String generateToken() {
+                byte[] bytes = new byte[TOKEN_SIZE_BYTES];
+                SECURE_RANDOM.nextBytes(bytes);
+
+                try {
+                        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                        byte[] hashedBytes = digest.digest(bytes);
+                        return toHex(hashedBytes);
+                } catch (NoSuchAlgorithmException exception) {
+                        throw new IllegalStateException("No se pudo generar un token seguro.", exception);
+                }
+        }
+
+        private static String toHex(byte[] bytes) {
+                StringBuilder builder = new StringBuilder(bytes.length * 2);
+                for (byte value : bytes) {
+                        builder.append(String.format("%02x", value));
+                }
+                return builder.toString();
         }
 }

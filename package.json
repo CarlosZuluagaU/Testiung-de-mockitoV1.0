@@ -1,0 +1,16 @@
+{
+  "name": "testing-de-mockito-cypress",
+  "version": "1.0.0",
+  "description": "Automatización con Cypress usando patrón Screenplay",
+  "scripts": {
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:chrome": "cypress run --browser chrome",
+    "test:scaffold": "node cypress/scaffold.js",
+    "test:new": "node cypress/scaffold.js --name=$npm_config_name --url=$npm_config_url --actions=$npm_config_actions"
+  },
+  "devDependencies": {
+    "cypress": "^13.0.0"
+  },
+  "keywords": ["cypress", "screenplay", "automation", "testing", "qa"]
+}

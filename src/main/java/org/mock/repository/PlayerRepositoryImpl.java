@@ -5,10 +5,12 @@ import org.mock.persistence.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Predicate;
 
 public class PlayerRepositoryImpl implements IPlayerRepository {
 
-    private List<Player> playerDatabase = new ArrayList<>(List.of(
+    private final List<Player> playerDatabase = new ArrayList<>(List.of(
             // ── Delanteros ──────────────────────────────────────────────────
             new Player(1L,  "Lionel Messi",        "Inter Miami",      "Delantero"),
             new Player(2L,  "Cristiano Ronaldo",   "Al Nassr",         "Delantero"),
@@ -62,7 +64,7 @@ public class PlayerRepositoryImpl implements IPlayerRepository {
     @Override
     public List<Player> findAll() {
         System.out.println("-> findAll()");
-        return this.playerDatabase;
+        return List.copyOf(this.playerDatabase);
     }
 
     @Override
@@ -76,12 +78,14 @@ public class PlayerRepositoryImpl implements IPlayerRepository {
 
     @Override
     public void save(Player player) {
+        Objects.requireNonNull(player, "player must not be null");
         System.out.println("-> save(" + player.getName() + ")");
         this.playerDatabase.add(player);
     }
 
     @Override
     public void update(Player updated) {
+        Objects.requireNonNull(updated, "updated player must not be null");
         System.out.println("-> update(" + updated.getName() + ")");
         Player existing = findById(updated.getId());
         existing.setName(updated.getName());
@@ -92,26 +96,22 @@ public class PlayerRepositoryImpl implements IPlayerRepository {
     @Override
     public void deleteById(Long id) {
         System.out.println("-> deleteById(" + id + ")");
-        if (!existsById(id)) throw new PlayerNotFoundException(id);
-        this.playerDatabase = this.playerDatabase.stream()
-                .filter(player -> !player.getId().equals(id))
-                .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+        boolean removed = this.playerDatabase.removeIf(player -> player.getId().equals(id));
+        if (!removed) {
+            throw new PlayerNotFoundException(id);
+        }
     }
 
     @Override
     public List<Player> findByTeam(String team) {
         System.out.println("-> findByTeam(" + team + ")");
-        return this.playerDatabase.stream()
-                .filter(player -> player.getTeam().equalsIgnoreCase(team))
-                .toList();
+        return filterBy(player -> player.getTeam().equalsIgnoreCase(team));
     }
 
     @Override
     public List<Player> findByPosition(String position) {
         System.out.println("-> findByPosition(" + position + ")");
-        return this.playerDatabase.stream()
-                .filter(player -> player.getPosition().equalsIgnoreCase(position))
-                .toList();
+        return filterBy(player -> player.getPosition().equalsIgnoreCase(position));
     }
 
     @Override
@@ -120,38 +120,9 @@ public class PlayerRepositoryImpl implements IPlayerRepository {
                 .anyMatch(player -> player.getId().equals(id));
     }
 
-    public List<Player> findByTeamLegacy(String team) {
+    private List<Player> filterBy(Predicate<Player> predicate) {
         return this.playerDatabase.stream()
-                .filter(player -> player.getTeam().equalsIgnoreCase(team))
+                .filter(predicate)
                 .toList();
-    }
-
-    public List<Player> findByPositionLegacy(String position) {
-        return this.playerDatabase.stream()
-                .filter(player -> player.getPosition().equalsIgnoreCase(position))
-                .toList();
-    }
-
-    // Método duplicado intencional para que SonarCloud detecte duplicación
-    private java.util.List<Player> filterByTeamDuplicate(java.util.List<Player> players, String team) {
-        return players.stream()
-                .filter(player -> player.getTeam().equalsIgnoreCase(team))
-                .toList();
-    }
-
-    // Método duplicado intencional para que SonarCloud detecte duplicación
-    private java.util.List<Player> filterByPositionDuplicate(java.util.List<Player> players, String position) {
-        return players.stream()
-                .filter(player -> player.getPosition().equalsIgnoreCase(position))
-                .toList();
-    }
-
-    // Método con catch vacío — mala práctica intencional para generar una alerta de fiabilidad
-    public void riskyOperation() {
-        try {
-            Integer.parseInt("not_a_number");
-        } catch (Exception e) {
-            // excepción silenciada intencionalmente
-        }
     }
 }

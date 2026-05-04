@@ -3,14 +3,15 @@ package org.mock.service;
 import org.mock.persistence.entity.Player;
 import org.mock.repository.IPlayerRepository;
 
+import java.util.Objects;
 import java.util.List;
 
 public class PlayerServiceImpl implements IPlayerService {
 
-    private IPlayerRepository playerRepository;
+    private final IPlayerRepository playerRepository;
 
     public PlayerServiceImpl(IPlayerRepository playerRepository) {
-        this.playerRepository = playerRepository;
+        this.playerRepository = Objects.requireNonNull(playerRepository, "playerRepository must not be null");
     }
 
     @Override
@@ -51,21 +52,5 @@ public class PlayerServiceImpl implements IPlayerService {
     @Override
     public boolean existsById(Long id) {
         return this.playerRepository.existsById(id);
-    }
-
-    // Método duplicado intencional para que SonarCloud detecte duplicación
-    // (misma lógica que hay en PlayerRepositoryImpl.findByTeam)
-    private java.util.List<Player> filterByTeamDuplicate(java.util.List<Player> players, String team) {
-        return players.stream()
-                .filter(player -> player.getTeam().equalsIgnoreCase(team))
-                .toList();
-    }
-
-    // Método duplicado intencional para que SonarCloud detecte duplicación
-    // (misma lógica que hay en PlayerRepositoryImpl.findByPosition)
-    private java.util.List<Player> filterByPositionDuplicate(java.util.List<Player> players, String position) {
-        return players.stream()
-                .filter(player -> player.getPosition().equalsIgnoreCase(position))
-                .toList();
     }
 }

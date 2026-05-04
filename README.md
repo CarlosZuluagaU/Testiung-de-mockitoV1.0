@@ -220,6 +220,55 @@ Si tu objetivo es revisar el proyecto y corregir errores detectados por SonarClo
 
 ---
 
+## 8. Análisis de cobertura
+
+La cobertura de pruebas muestra qué parte del código fue ejecutada por la suite de tests. No garantiza por sí sola que el programa esté correcto, pero sí ayuda a detectar zonas del código que nunca se ejercitan y que por eso tienen más riesgo de fallar sin que nadie lo note.
+
+En este proyecto, la cobertura es especialmente importante en la capa de servicio, porque allí se concentran las reglas de negocio y la interacción con el repositorio. Los tests actuales validan los caminos principales de `PlayerServiceImpl`, pero todavía conviene revisar si hay ramas, validaciones o casos límite que no estén siendo cubiertos.
+
+### Qué cubre hoy el proyecto
+
+- Delegación de métodos desde `PlayerServiceImpl` hacia `IPlayerRepository`.
+- Casos exitosos y de excepción para `findById(...)` y `deleteById(...)`.
+- Validación de listas vacías en búsquedas por equipo y posición.
+- Uso de `verify`, `times`, `never`, `ArgumentCaptor` y `verifyNoMoreInteractions`.
+
+### Qué conviene revisar para mejorar la cobertura
+
+- Ramas de validación con valores nulos o vacíos.
+- Casos extremos en `Main.java`, si se quiere medir también la parte ejecutable.
+- Métodos del repositorio que no estén cubiertos por pruebas directas.
+- Flujo de excepciones para asegurar que los errores no queden ocultos.
+
+### Cobertura y CI
+
+El proyecto usa JaCoCo para medir cobertura durante el build. Actualmente el umbral mínimo se dejó en `0.00` para no bloquear la integración, pero eso significa que la cobertura se está midiendo más como referencia que como puerta de calidad.
+
+### Objetivo de cobertura
+
+Como meta realista, el proyecto puede apuntar primero a un **70%** de cobertura útil en la capa de servicio y luego subir a **80%** cuando las validaciones y ramas límite estén cubiertas. No conviene perseguir un número alto solo por cumplir; es mejor priorizar los métodos con reglas de negocio y los flujos que pueden romperse con más facilidad.
+
+### Plan de mejora por etapas
+
+1. Cubrir mejor `PlayerServiceImpl` con casos felices, errores y validaciones.
+2. Agregar pruebas para ramas nulas, vacías y excepciones del repositorio.
+3. Revisar si `Main.java` debe medirse o excluirse de la meta de cobertura por ser código de demostración.
+4. Subir el umbral de JaCoCo de forma gradual cuando la suite ya cubra los caminos críticos.
+
+### Recomendación práctica
+
+Si el objetivo es mejorar calidad real, conviene subir el umbral de cobertura poco a poco y empezar por el servicio, no por el código de demostración o por métodos que solo imprimen texto. También es mejor cubrir los casos de negocio importantes que perseguir porcentaje alto con tests poco útiles.
+
+### Qué porcentaje usaría en CI
+
+Para este proyecto, un umbral intermedio de **70%** es razonable como siguiente paso. Si la cobertura se mantiene estable y los tests siguen siendo confiables, luego se puede mover a **75%** o **80%**.
+
+### Frase corta para entregar
+
+> La cobertura del proyecto se concentra principalmente en la capa de servicio y valida los caminos más importantes con Mockito y JUnit 5. Aunque JaCoCo está configurado, el umbral actual no bloquea el build, así que la cobertura funciona como referencia técnica. Para mejorarla, conviene cubrir ramas límite, validaciones y excepciones relevantes antes de subir el umbral de calidad.
+
+---
+
 ## 5. Dependencias requeridas
 
 ```xml
@@ -244,3 +293,37 @@ Si tu objetivo es revisar el proyecto y corregir errores detectados por SonarClo
     <optional>true</optional>
 </dependency>
 ```
+
+---
+
+## 9. Análisis de código estático general
+
+El análisis estático revisa el código sin ejecutarlo. Sirve para detectar problemas de estructura, mantenimiento, seguridad y fiabilidad antes de que lleguen a producción. En este proyecto, ese análisis deja ver que el código compila y funciona, pero todavía arrastra deuda técnica intencional para que SonarCloud tenga hallazgos claros.
+
+### Hallazgos principales
+
+- Duplicación en métodos de filtrado y bloques repetidos.
+- Complejidad alta en `Main.main(...)` por mezclar demasiadas responsabilidades.
+- Riesgos de seguridad por secretos hardcodeados, `Random` y `MD5`.
+- Problemas de fiabilidad por `catch` vacíos y manejo débil de errores.
+- Cobertura útil concentrada sobre todo en la capa de servicio.
+
+### Lectura global del proyecto
+
+El código no está pensado como una versión final limpia, sino como una base de práctica para análisis y corrección. Por eso, el análisis estático tiene sentido aquí: muestra con claridad qué partes deben refactorizarse primero y qué tipo de regla está marcando cada herramienta.
+
+### Orden de trabajo recomendado
+
+1. Corregir seguridad.
+2. Corregir fiabilidad.
+3. Reducir duplicación.
+4. Bajar complejidad cognitiva y ciclomática.
+5. Subir cobertura útil si se quiere endurecer la calidad del build.
+
+### Conclusión corta para entrega
+
+> En general, el análisis estático del proyecto muestra una base funcional pero con deuda técnica intencional en duplicación, seguridad, fiabilidad y complejidad. SonarCloud ayuda a localizar esos puntos y a priorizar la corrección sin necesidad de ejecutar el programa. El siguiente paso lógico es refactorizar primero las áreas de mayor riesgo y después reforzar la cobertura de pruebas.
+
+Si necesitas la versión corregida y explicada para la presentación, revisa [DOCUMENTACION_SOLUCION_ANALISIS_ESTATICO.md](DOCUMENTACION_SOLUCION_ANALISIS_ESTATICO.md).
+
+Si quieres un guion listo para exponer, revisa [GUIA_PRESENTACION_ANALISIS_ESTATICO.md](GUIA_PRESENTACION_ANALISIS_ESTATICO.md).
