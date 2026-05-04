@@ -1,120 +1,204 @@
-# Guion de presentación: solución del análisis estático
+# Guía completa de exposición (Screenplay + análisis estático + SonarQube + cobertura)
 
-## 1. Apertura
+## 1. Objetivo de la exposición
 
-> Buen día. Voy a explicar cómo identifiqué y corregí los problemas de análisis estático del proyecto, centrados en duplicación, seguridad, fiabilidad y complejidad. La idea fue dejar el código más limpio, más mantenible y listo para que SonarCloud marque menos hallazgos.
+Presentar de forma cronológica todo el trabajo realizado en el proyecto:
 
-## 2. Qué problema tenía el proyecto
+1. Implementación de estructura Screenplay con Cypress para E2E.
+2. Identificación y corrección de problemas de análisis estático (duplicación, seguridad, fiabilidad, complejidad).
+3. Integración de SonarQube/SonarCloud en CI con GitHub Actions.
+4. Mejora de cobertura de pruebas con validación técnica final.
 
-Antes del refactor, el proyecto tenía deuda técnica intencional para el análisis:
-- `Main.java` concentraba demasiadas responsabilidades.
-- Había secretos hardcodeados y uso inseguro de `Random` y `MD5`.
-- El repositorio repetía lógica de filtrado.
-- Existía un `catch` vacío que ocultaba errores.
-- El servicio tenía duplicación innecesaria.
+## 2. Resumen ejecutivo (para abrir en 30 segundos)
 
-## 3. Qué corregí en cada archivo
+> El proyecto inició con deuda técnica intencional para practicar análisis estático. Luego se implementó una base de automatización E2E con patrón Screenplay en Cypress, se refactorizó Java para eliminar hallazgos críticos de calidad y seguridad, se dejó SonarQube funcionando en CI con Java 17 y finalmente se elevó la cobertura de pruebas desde valores bajos hasta un nivel alto y estable.
 
-### `src/main/java/org/mock/Main.java`
+## 3. Bloque 1: Screenplay con Cypress
 
-> Este fue el archivo más importante porque concentraba complejidad, seguridad y duplicación.
+### 3.1 Qué se implementó
 
-Qué hice:
-- Separé el `main(...)` en métodos pequeños y con una sola responsabilidad.
-- Dividí la salida en bloques como encabezado, estadísticas, búsquedas, CRUD y demo de excepción.
-- Eliminé los secretos hardcodeados.
-- Reemplacé la generación insegura del token por `SecureRandom` y `SHA-256`.
-- Quité métodos duplicados de impresión.
+Se creó una estructura reutilizable de Screenplay:
 
-Qué decir en la exposición:
-> Aquí reduje la complejidad cognitiva: el método principal ya no hace todo junto, sino que coordina funciones pequeñas. Eso mejora lectura, mantenimiento y análisis estático.
+- Actor
+- Task
+- Question
+- Interactions (`Click`, `Type`, `Navigate`)
+- Questions (`Visibility`, `TextContent`)
+- Scaffold para generar pruebas rápidamente
 
-### `src/main/java/org/mock/repository/PlayerRepositoryImpl.java`
+Referencia: [SCREENPLAY_CYPRESS_GUIDE.md](SCREENPLAY_CYPRESS_GUIDE.md)
 
-> En este archivo el problema principal era la repetición de lógica y el manejo débil de errores.
+### 3.2 Qué decir en exposición
 
-Qué hice:
-- Unifiqué el filtrado con un método genérico `filterBy(...)`.
-- Eliminé métodos legados y duplicados.
-- Eliminé `riskyOperation()` porque ocultaba errores con un `catch` vacío.
-- Hice `playerDatabase` inmutable como referencia interna con `final`.
-- Cambié `findAll()` para devolver una copia y no exponer la lista interna.
-- Agregué validaciones con `Objects.requireNonNull(...)` en `save(...)` y `update(...)`.
-- Simplifiqué `deleteById(...)` usando `removeIf(...)`.
+> Screenplay organiza la automatización como comportamiento de usuario, no como pasos sueltos. Eso mejora legibilidad, mantenimiento y escalabilidad porque las interacciones quedan centralizadas y reutilizables.
 
-Qué decir en la exposición:
-> Aquí el objetivo fue bajar duplicación y mejorar fiabilidad. Ahora el repositorio tiene una lógica más clara y menos puntos de fallo.
+### 3.3 Demo sugerida
 
-### `src/main/java/org/mock/service/PlayerServiceImpl.java`
+1. Mostrar la estructura de carpetas `cypress/`.
+2. Abrir un ejemplo de `Actor` y una `Task`.
+3. Mostrar cómo se genera un test con el scaffold.
 
-> El servicio era simple, pero tenía duplicación innecesaria que no aportaba valor.
+Comandos:
 
-Qué hice:
-- Eliminé métodos auxiliares duplicados.
-- Dejé la clase como una capa de delegación limpia.
-- Hice el repositorio `final`.
-- Validé el constructor con `Objects.requireNonNull(...)`.
-
-Qué decir en la exposición:
-> El servicio quedó como debería estar: una capa delgada que delega al repositorio y no repite lógica.
-
-### `pom.xml`
-
-> Aquí no cambié la funcionalidad del negocio, pero sí mantuve la base para CI y cobertura.
-
-Qué recordar:
-- Java 21 sigue configurado.
-- JaCoCo sigue activo.
-- El umbral quedó en `0.00` para no bloquear el build mientras la cobertura se usa como referencia.
-
-Qué decir en la exposición:
-> La cobertura sigue midiendo el código, pero la meta no bloquea la compilación hasta que la suite crezca más.
-
-### `.github/workflows/sonar.yml`
-
-> Este archivo ya estaba corregido para que GitHub Actions encuentre el `pom.xml` de forma dinámica.
-
-Qué decir en la exposición:
-> Eso evita fallos por rutas fijas y hace más robusto el análisis en CI.
-
-## 4. Validación realizada
-
-Ejecuté:
-
-```powershell
-mvn test
+```bash
+node cypress/scaffold.js --name=miTest --url=http://localhost:3000 --actions=navigate,click,type,verify
+npm run cypress:open
 ```
 
-Resultado:
-- 14 pruebas ejecutadas.
+## 4. Bloque 2: problemas detectados en análisis estático
+
+Problemas originales del proyecto Java:
+
+- Alta complejidad en `Main`.
+- Duplicación en repositorio y servicio.
+- Riesgo de seguridad por secretos hardcodeados y generación de token insegura.
+- Riesgo de fiabilidad por manejo incorrecto de errores.
+
+## 5. Bloque 3: refactor por archivo (núcleo técnico)
+
+### 5.1 Main
+
+Archivo: [src/main/java/org/mock/Main.java](src/main/java/org/mock/Main.java)
+
+Cambios clave:
+
+- Se dividió el flujo principal en métodos pequeños por responsabilidad.
+- Se eliminó lógica insegura y se dejó generación segura de token.
+- Se separó la impresión de reportes y demos para reducir complejidad cognitiva.
+
+Mensaje para jurado:
+
+> El `main` dejó de ser un bloque monolítico y pasó a ser un orquestador limpio, más fácil de mantener y de testear.
+
+### 5.2 Repository
+
+Archivo: [src/main/java/org/mock/repository/PlayerRepositoryImpl.java](src/main/java/org/mock/repository/PlayerRepositoryImpl.java)
+
+Cambios clave:
+
+- Unificación de filtros para eliminar duplicación.
+- Validaciones con `Objects.requireNonNull(...)`.
+- `findAll()` devolviendo copia (`List.copyOf`) para no exponer estado interno.
+- `deleteById(...)` con comportamiento consistente y excepción controlada cuando no existe el id.
+
+Mensaje para jurado:
+
+> Aquí se atacó duplicación y robustez de datos. Menos código repetido significa menos bugs futuros.
+
+### 5.3 Service
+
+Archivo: [src/main/java/org/mock/service/PlayerServiceImpl.java](src/main/java/org/mock/service/PlayerServiceImpl.java)
+
+Cambios clave:
+
+- Eliminación de métodos redundantes.
+- Servicio como capa de delegación limpia.
+- Dependencia `final` y validada en constructor.
+
+Mensaje para jurado:
+
+> Se dejó una arquitectura más clara por capas: el servicio coordina, el repositorio resuelve persistencia.
+
+## 6. Bloque 4: SonarQube/SonarCloud en CI
+
+### 6.1 Configuración final
+
+Archivos:
+
+- [pom.xml](pom.xml)
+- [.github/workflows/sonar.yml](.github/workflows/sonar.yml)
+
+Puntos importantes que sí quedaron alineados:
+
+- Organización Sonar: `carloszuluagau`.
+- Proyecto: `CarlosZuluagaU_fabrica_2026S1`.
+- Workflow con JDK 17.
+- Uso de secreto `SONAR_TOKEN` en GitHub Actions.
+
+Mensaje para jurado:
+
+> El análisis no depende ya de ejecución local: queda integrado al pipeline y se valida en cada push/pull request.
+
+## 7. Bloque 5: cobertura y pruebas
+
+### 7.1 Qué se hizo
+
+Se amplió la suite de pruebas unitarias para cubrir capas que antes no estaban contempladas.
+
+Archivos de pruebas relevantes:
+
+- [src/test/java/org/mock/service/PlayerServiceImplTest.java](src/test/java/org/mock/service/PlayerServiceImplTest.java)
+- [src/test/java/org/mock/repository/PlayerRepositoryImplTest.java](src/test/java/org/mock/repository/PlayerRepositoryImplTest.java)
+- [src/test/java/org/mock/persistence/entity/PlayerTest.java](src/test/java/org/mock/persistence/entity/PlayerTest.java)
+- [src/test/java/org/mock/exception/PlayerNotFoundExceptionTest.java](src/test/java/org/mock/exception/PlayerNotFoundExceptionTest.java)
+- [src/test/java/org/mock/MainTest.java](src/test/java/org/mock/MainTest.java)
+
+### 7.2 Resultado actual
+
+- 68 pruebas ejecutadas.
 - 0 fallos.
-- 0 errores.
-- BUILD SUCCESS.
+- Build en éxito.
+- Cobertura JaCoCo total actual: 96%.
 
-Qué decir en la exposición:
-> La solución no solo quedó bien escrita, también quedó validada con pruebas verdes.
+Reporte: [target/site/jacoco/index.html](target/site/jacoco/index.html)
 
-## 5. Qué mejoró con el refactor
+### 7.3 Cómo explicar el “por qué no 100%”
 
-- Menos complejidad en `Main.java`.
-- Menos duplicación en repositorio y servicio.
-- Menos riesgo de seguridad por secretos o algoritmos débiles.
-- Menos riesgo de ocultar errores.
-- Mejor mantenibilidad general.
+> Llegar al 100% es posible, pero no siempre es óptimo forzarlo si implica testear ramas artificiales o de baja probabilidad operativa. En este caso se logró un 96% realista y sólido, con cobertura completa en paquetes críticos como repositorio, servicio y excepciones.
 
-## 6. Cómo lo explicaría en 1 minuto
+## 8. Línea de tiempo del trabajo (para slide cronológica)
 
-> El proyecto tenía deuda técnica intencional para que SonarCloud detectara problemas reales. La corrección se centró en cuatro ejes: seguridad, fiabilidad, duplicación y complejidad. En `Main.java` separé responsabilidades y eliminé secretos inseguros. En `PlayerRepositoryImpl` unifiqué filtros, eliminé código repetido y corregí el manejo de errores. En `PlayerServiceImpl` dejé solo delegación limpia. Finalmente, validé todo con `mvn test`, que pasó con 14 pruebas exitosas.
+1. Se construyó la base Screenplay con Cypress.
+2. Se documentó la arquitectura y forma de uso del framework E2E.
+3. Se refactorizó el código Java para eliminar hallazgos de análisis estático.
+4. Se ajustó CI para SonarQube/SonarCloud con Java 17 y token seguro.
+5. Se incrementó cobertura con nuevas pruebas unitarias hasta 96%.
+6. Se validó todo con ejecución de pruebas en verde.
 
-## 7. Cierre
+## 9. Script de exposición (versión 5-7 minutos)
 
-> Con estos cambios, el proyecto quedó más claro, más mantenible y mejor preparado para análisis estático y presentación.
+### 9.1 Introducción
 
-## 8. Orden sugerido para mostrar en diapositivas
+> Este proyecto combina calidad de código y automatización. Primero estructuramos pruebas E2E con Screenplay en Cypress; luego resolvimos deuda técnica en Java enfocada en seguridad, fiabilidad, complejidad y duplicación.
 
-1. Problema original.
-2. `Main.java` antes y después.
-3. `PlayerRepositoryImpl.java` antes y después.
-4. `PlayerServiceImpl.java` simplificado.
-5. Validación con `mvn test`.
-6. Conclusión final.
+### 9.2 Screenplay
+
+> En vez de escribir pruebas rígidas, usamos Actor/Task/Question para modelar comportamiento del usuario. Esto permite reutilizar acciones y mantener los tests a largo plazo.
+
+### 9.3 Refactor estático
+
+> En `Main` reducimos complejidad. En repositorio eliminamos duplicación y mejoramos manejo de estado. En servicio dejamos una capa clara y liviana.
+
+### 9.4 CI y Sonar
+
+> El pipeline quedó integrado con SonarCloud, usando JDK 17 y `SONAR_TOKEN`. Así aseguramos control de calidad automático por commit.
+
+### 9.5 Cobertura
+
+> Subimos de cobertura baja a 96% con 68 tests verdes. Esto demuestra que los cambios no solo son estéticos: están verificados.
+
+### 9.6 Cierre
+
+> El resultado final es un proyecto más mantenible, seguro y medible, con automatización funcional tanto en E2E como en unit testing.
+
+## 10. Preguntas frecuentes y respuestas cortas
+
+### ¿Por qué usar Screenplay y no pruebas tradicionales?
+
+Porque separa comportamiento, reduce duplicación de pasos y escala mejor en proyectos reales.
+
+### ¿Qué valor aportó SonarQube si ya había tests?
+
+Los tests validan comportamiento; Sonar detecta deuda técnica y riesgos de calidad que no siempre rompen pruebas.
+
+### ¿Qué fue lo más crítico que se corrigió?
+
+El riesgo de seguridad (lógica insegura), la duplicación en repositorio/servicio y la complejidad de `Main`.
+
+### ¿Qué sigue después de esta entrega?
+
+Conectar los tests Cypress a un flujo CI para ejecutar E2E automáticamente en cada cambio relevante.
+
+## 11. Cierre final (frase lista para usar)
+
+> La mejora no fue solo “pasar Sonar”: se construyó una base de automatización y calidad sostenible, con arquitectura más limpia, análisis continuo y evidencia de estabilidad a través de pruebas.
